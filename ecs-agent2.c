@@ -11,11 +11,13 @@
 char* get_name(char* str){
     size_t i = 0, size = 50;
     char* ans = malloc(size);
-    str += 1;
+	memset(ans, 0, size);
+    str += 2;
     while(*str != '\0' && i < size){
         ans[i++] = *str;
         str += 1;
     }
+	ans[i] = '\0';
     return ans;
 }
 
@@ -68,21 +70,23 @@ int main(int argc , char *argv[]) {
         memset ( client_message, 0, 2000 );
         //Receive a message from client
         if (recv(client_sock , client_message , 2000 , 0) > 0) {
-            printf("received message: %s\n", client_message);
+            printf("received message in ecs-agent2: %s\n", client_message);
+			if(client_message[0] == 'X'){
+				break;
+			}
             //Send the message back to client
             pid_t pid = fork();
             if (pid < 0) { /* error occurred */
                 fprintf(stderr, "fork failed\n");
                 exit(1);
-            } else if(pid == 0){
+            }else if(pid == 0){
                 execlp("docker", "docker", "run", "--name", get_name(client_message), "-id", "ubuntu:latest", "/bin/bash", NULL);
             }else{
                 send(client_sock , client_message , strlen(client_message), 0);
-				wait(NULL);
-				break;
             }
         } else {
             puts("recv failed");
+			break; // to prevent infinite loop, this is not the right way to stop it
         }
     }
 	return 0;

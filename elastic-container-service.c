@@ -18,10 +18,12 @@ char* get_name(char* str){
         ans[i++] = *str;
         str += 1;
     }
+    ans[i] = '\0';
     return ans;
 }
 
 void socket_client(char* command, char *message, size_t port){
+    //printf("IN SOCKET_CLIENT: %s %s\n\n", command, message);
     int sock;
 	struct sockaddr_in server;
 	char server_reply[2000];
@@ -54,19 +56,20 @@ void socket_client(char* command, char *message, size_t port){
         strcpy( formated_message, command );
         strcat( formated_message, message );
 		
+        //printf("FORMATED MESSAGE = %s\n", formated_message);
 		//Send some data
-		if( send(sock , formated_message , strlen(message) , 0) < 0) {
+		if( send(sock , formated_message , strlen(formated_message) , 0) < 0) {
 			puts("Send failed");
 			return;
 		} else {
             puts("send ok");
+            sending = 0;
         }
 		
 		//Receive a reply from the server
         memset ( server_reply, 0, 2000 );
 		if( recv(sock , server_reply , 2000 , 0) < 0) {
 			puts("recv failed");
-			sending = 0;
 		} else {
             puts("recv ok");
         }
@@ -102,7 +105,7 @@ void subscribe_host(){
 
     //Connect to remote server
     if (connect(sock , (struct sockaddr *)&server , sizeof(server)) < 0) {
-        perror("connect failed. Error");
+        perror("connect failed. Error from subscribe_host()");
         return;
     }
     
@@ -143,7 +146,7 @@ void subscribe_host(){
 void admin_container(){
     // parent process because return value non-zero.
     // socket server
-    int socket_desc , client_sock , c , read_size;
+    int socket_desc , client_sock, c , read_size;
     struct sockaddr_in server , client;
     char client_message[2000];
     size_t receiving, sending;
@@ -188,42 +191,38 @@ void admin_container(){
         //Receive a message from client
         if (recv(client_sock , client_message , 2000 , 0) > 0) {
 
-            pid_t pid = fork();
-            if (pid < 0) { /* error occurred */
-                fprintf(stderr, "fork failed\n");
-                exit(1);
-            } else if (pid == 0) {
-                // Bloque de ejecucion del hijo
-                char *name = get_name(client_message);
-                char command = client_message[0];
+            char *name = get_name(client_message);
+            char command = client_message[0];
 
-                if (command == 'C' || command == 'S' || command == 'R' || command == 'D'){
+            if (command == 'C' || command == 'S' || command == 'R' || command == 'D' || command == 'X'){
 
-                    int r = rand()%2;
-                    int port;
+                int r = rand()%2;
+                int port;
 
-                    if(r){
-                        port = 8080;
-                    }else{
-                        port = 9090;
-                    }
+                if(r){
+                    port = 8080;
+                }else{
+                    port = 9090;
+                }
 
+                if(command == 'C'){
                     FILE * fp;
                     fp = fopen ("containers.txt", "a");
                     fprintf(fp, "%s:%d\t%s\n", "127.0.0.1", port, name);
                     fclose(fp);
-                    socket_client(&command, name, port);
-
-                }else{
-                    puts("Invalid command received @ admin_container.");
                 }
-            } else {  
-                // Bloque de ejecucion del padre
-                printf("received message: %s\n", client_message);
-                //Send the message back to client
-                send(client_sock , client_message , strlen(client_message), 0);
-                wait(NULL); // puede fallar?
+                
+                socket_client(&command, name, port);
+
+            }else{
+                puts("Invalid command received @ admin_container.");
             }
+        
+            // Bloque de ejecucion del padre
+            printf("received message: %s\n", client_message);
+            //Send the message back to client
+            send(client_sock , client_message , strlen(client_message), 0);
+            wait(NULL); // puede fallar?
             
         } else {
             puts("recv failed, server will stop listening...");

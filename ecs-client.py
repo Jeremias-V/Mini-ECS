@@ -8,10 +8,10 @@ def main():
     print(connection.create_container("test3"))
     print(connection.create_container("test4"))
     print(connection.list_containers())
-    print(connection.stop_container("test5"))
+    print(connection.stop_container("test4"))
     print()
     print(connection.list_containers())
-    print(connection.delete_instance("test6"))
+    print(connection.delete_instance("test3"))
     print()
     print(connection.list_containers())
 
