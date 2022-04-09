@@ -6,6 +6,7 @@ def main():
     print(connection.create_container("test1"))
     print(connection.create_container("test2"))
     print(connection.create_container("test3"))
+    
     print(connection.create_container("test4"))
     print(connection.list_containers())
     print(connection.stop_container("test4"))
@@ -16,5 +17,7 @@ def main():
     print(connection.list_containers())
 
     connection.stop()
+    sleep(1)
+    connection.close()
 
 main()

@@ -41,7 +41,7 @@ void socket_client(char* command, char *message, size_t port){
 
 	//Connect to remote server
 	if (connect(sock , (struct sockaddr *)&server , sizeof(server)) < 0) {
-		perror("connect failed. Error");
+		perror("connect failed from socket_client. Error");
 		return;
 	}
 	
@@ -63,13 +63,13 @@ void socket_client(char* command, char *message, size_t port){
 			return;
 		} else {
             puts("send ok");
-            sending = 0;
         }
 		
 		//Receive a reply from the server
         memset ( server_reply, 0, 2000 );
 		if( recv(sock , server_reply , 2000 , 0) < 0) {
-			puts("recv failed");
+			puts("recv failed from socket_client");
+            sending = 0; // no entra aca
 		} else {
             puts("recv ok");
         }
@@ -105,7 +105,7 @@ void subscribe_host(){
 
     //Connect to remote server
     if (connect(sock , (struct sockaddr *)&server , sizeof(server)) < 0) {
-        perror("connect failed. Error from subscribe_host()");
+        perror("connect failed from subscribe_host. Error from subscribe_host()");
         return;
     }
     
@@ -221,12 +221,13 @@ void admin_container(){
             // Bloque de ejecucion del padre
             printf("received message: %s\n", client_message);
             //Send the message back to client
+            
             send(client_sock , client_message , strlen(client_message), 0);
-            wait(NULL); // puede fallar?
+            // El problema es que se cierra la conexión entonces no llega el mensaje al otro socket de ecs-client
             
         } else {
             puts("recv failed, server will stop listening...");
-            receiving = 0;
+            sending = 0;
         }
     }
 }
@@ -238,7 +239,7 @@ int main(int argc , char *argv[]) {
     int id = fork();
 
     if (id == 0) {
-        subscribe_host();
+        //subscribe_host();
     }
     else {
         admin_container();

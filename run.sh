@@ -1,8 +1,9 @@
 #!/bin/bash
 
-deactivate
+deactivate 2> /dev/null
 source env/bin/activate
-sudo ./e1.out &
-sudo ./e2.out &
-sudo ./a.out &
+sudo ./ecs-agent.out &
+sleep 0.3
+sudo ./ecs.out &
+sleep 0.3
 python3 ecs-client.py
